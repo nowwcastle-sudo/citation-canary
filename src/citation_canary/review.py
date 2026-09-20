@@ -224,7 +224,10 @@ def update_ledger(path: Path, report_path: Path, *, action: str,
                 raise _conflict()
             os.replace(temp_path, path)
         if temp_path.exists():
-            temp_path.unlink()
+            try:
+                temp_path.unlink()
+            except OSError:
+                pass  # Promotion succeeded; preserve the extra link for inspection.
     except ScanRequestError:
         raise
     except OSError:
