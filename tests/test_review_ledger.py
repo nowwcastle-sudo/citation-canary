@@ -12,7 +12,7 @@ from unittest.mock import patch
 
 from citation_canary.report import ScanRequestError
 from citation_canary.review import append_event, new_ledger, review_summary, update_ledger, validate_ledger
-from citation_canary.review_io import canonical_digest
+from citation_canary.review_io import MAX_JSON_BYTES, canonical_digest, read_json
 
 
 def report_fixture() -> dict[str, object]:
@@ -123,6 +123,56 @@ class LedgerTests(unittest.TestCase):
                                       disposition='reject', stage=None)
                 self.assertEqual(ledger_path.read_bytes(), original)
                 self.assertTrue(list(root.glob('.ledger.json.*.tmp')))
+
+    def test_output_node_budget_prevents_unreadable_promotion(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            report_path, ledger_path = root / 'report.json', root / 'ledger.json'
+            report = report_fixture()
+            report_path.write_text(json.dumps(report, ensure_ascii=False), encoding='utf-8')
+            ledger = new_ledger(report)
+            previous = None
+            for sequence in range(1, 22_222):
+                event = {'sequence': sequence, 'action': 'decide', 'item_number': 1,
+                         'disposition': 'confirm', 'stage': None, 'at': '2026-09-20T00:00:00Z',
+                         'previous_event_digest': previous}
+                previous = event['digest'] = canonical_digest(event)
+                ledger['events'].append(event)
+            original = (json.dumps(ledger, ensure_ascii=False, separators=(',', ':')) + '\n').encode('utf-8')
+            self.assertLess(len(original), MAX_JSON_BYTES)
+            ledger_path.write_bytes(original)
+            self.assertEqual(len(read_json(ledger_path)['events']), 22_221)
+            with self.assertRaises(ScanRequestError):
+                update_ledger(ledger_path, report_path, action='decide', item_number=1,
+                              disposition='reject', stage=None)
+            self.assertEqual(ledger_path.read_bytes(), original)
+            self.assertEqual(len(read_json(ledger_path)['events']), 22_221)
+            self.assertTrue(list(root.glob('.ledger.json.*.tmp')))
+
+    def test_failed_new_promotion_temp_unlink_rolls_back_only_owned_ledger(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            report_path, ledger_path = root / 'report.json', root / 'ledger.json'
+            report_path.write_text(json.dumps(report_fixture(), ensure_ascii=False), encoding='utf-8')
+            original_unlink = Path.unlink
+
+            def fail_temp_unlink(candidate: Path, *args, **kwargs):
+                if candidate.suffix == '.tmp':
+                    raise PermissionError('injected')
+                return original_unlink(candidate, *args, **kwargs)
+
+            with patch('citation_canary.review.Path.unlink', autospec=True,
+                       side_effect=fail_temp_unlink):
+                with self.assertRaises(ScanRequestError) as caught:
+                    update_ledger(ledger_path, report_path, action='decide', item_number=1,
+                                  disposition='confirm', stage=None)
+            self.assertEqual(caught.exception.code, 'REVIEW_WRITE_FAILED')
+            self.assertFalse(ledger_path.exists())
+            self.assertFalse((root / 'ledger.json.lock').exists())
+            retained = list(root.glob('.ledger.json.*.tmp'))
+            self.assertEqual(len(retained), 1)
+            self.assertEqual(retained[0].stat().st_nlink, 1)
+            self.assertEqual(len(read_json(retained[0])['events']), 1)
 
     def test_stale_lock_preserved(self):
         with tempfile.TemporaryDirectory() as directory:

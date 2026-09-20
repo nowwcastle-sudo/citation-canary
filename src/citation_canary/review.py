@@ -204,7 +204,14 @@ def update_ledger(path: Path, report_path: Path, *, action: str,
             temporary.write(payload)
             temporary.flush()
             os.fsync(temporary.fileno())
-        _safe_path(temp_path, existing=True)
+        temp_info = _safe_path(temp_path, existing=True)
+        try:
+            if read_json(temp_path) != updated:
+                raise _invalid()
+        except ScanRequestError as error:
+            if error.code == 'REVIEW_JSON_INVALID':
+                raise _invalid() from None
+            raise
         current = _ledger_path(path)
         if before is None:
             if current is not None:
@@ -213,6 +220,18 @@ def update_ledger(path: Path, report_path: Path, *, action: str,
                 os.link(temp_path, path)
             except FileExistsError:
                 raise _conflict() from None
+            try:
+                temp_path.unlink()
+            except OSError:
+                try:
+                    linked = path.lstat()
+                    retained = temp_path.lstat()
+                    if temp_info is not None and linked.st_nlink >= 2 and \
+                            _identity(linked) == _identity(retained) == _identity(temp_info):
+                        path.unlink()
+                except OSError:
+                    pass
+                raise ScanRequestError('REVIEW_WRITE_FAILED', 'Review ledger could not be written.') from None
         else:
             if current is None or _identity(current) != _identity(before):
                 raise _conflict()
@@ -223,11 +242,6 @@ def update_ledger(path: Path, report_path: Path, *, action: str,
             if current_digest != original_digest:
                 raise _conflict()
             os.replace(temp_path, path)
-        if temp_path.exists():
-            try:
-                temp_path.unlink()
-            except OSError:
-                pass  # Promotion succeeded; preserve the extra link for inspection.
     except ScanRequestError:
         raise
     except OSError:

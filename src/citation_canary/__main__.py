@@ -103,7 +103,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             return 0
         except ScanRequestError as error:
             print(error.code, file=sys.stderr)
-            return 2
+            return 1 if error.code == 'REVIEW_WRITE_FAILED' else 2
         except Exception:
             print('REVIEW_WRITE_FAILED', file=sys.stderr)
             return 1
