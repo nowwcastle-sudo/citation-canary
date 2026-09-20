@@ -94,7 +94,7 @@ class ReviewInputTests(unittest.TestCase):
         with self.assertRaises(ScanRequestError):
             validate_report(value)
 
-    def test_file_replaced_while_reading_rejected(self):
+    def test_replacement_attempt_while_open_rejected(self):
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / 'report.json'
             path.write_text(json.dumps(report()), encoding='utf-8')
@@ -151,8 +151,37 @@ class ReviewInputTests(unittest.TestCase):
             self.assertEqual(caught.exception.code, 'REVIEW_OUTPUT_FAILED')
             self.assertEqual(output.read_bytes(), b'partial-but-retained')
 
+    @unittest.skipUnless(os.name == 'nt', 'NTFS alternate stream test')
+    def test_new_alternate_stream_on_protected_input_rejected(self):
+        with tempfile.TemporaryDirectory() as directory:
+            source = Path(directory) / 'input.json'
+            source.write_bytes(b'original')
+            stream = Path(f'{source}:review.html')
+            with self.assertRaises(ScanRequestError):
+                write_new(stream, b'new stream', (source,))
+            self.assertEqual(source.read_bytes(), b'original')
+            with self.assertRaises(OSError):
+                stream.open('rb')
+
+    def test_samefile_io_failure_has_fixed_safe_error(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            source = root / 'input.json'
+            output = root / 'existing.html'
+            source.write_bytes(b'original')
+            output.write_bytes(b'existing')
+            with patch('citation_canary.review_io.os.path.samefile',
+                       side_effect=OSError('synthetic raw detail')):
+                with self.assertRaises(ScanRequestError) as caught:
+                    write_new(output, b'new', (source,))
+            self.assertEqual(caught.exception.code, 'REVIEW_OUTPUT_FAILED')
+            self.assertEqual(str(caught.exception), 'Review output could not be written.')
+            self.assertIsNone(caught.exception.__cause__)
+            self.assertEqual(source.read_bytes(), b'original')
+            self.assertEqual(output.read_bytes(), b'existing')
+
     @unittest.skipUnless(os.name == 'nt', 'Windows junction test')
-    def test_parent_junction_rejected(self):
+    def test_parent_directory_symlink_rejected(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             target = root / 'target'

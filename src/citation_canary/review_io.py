@@ -28,6 +28,8 @@ def _error(code: str, message: str) -> ScanRequestError:
 
 def _safe_path(path: Path, *, existing: bool) -> os.stat_result | None:
     absolute = path.absolute()
+    if os.name == "nt" and any(":" in part for part in absolute.parts[1:]):
+        raise _error("REVIEW_PATH_INVALID", "Review path is not a safe regular path.")
     for ancestor in reversed((absolute, *absolute.parents)):
         try:
             info = ancestor.lstat()
@@ -227,8 +229,11 @@ def write_new(path: Path, payload: bytes, protected: tuple[Path, ...]) -> None:
         _safe_path(source, existing=True)
         if os.path.normcase(os.path.abspath(path)) == os.path.normcase(os.path.abspath(source)):
             raise _error("REVIEW_OUTPUT_EXISTS", "Review output already exists or aliases an input.")
-        if path.exists() and os.path.samefile(path, source):
-            raise _error("REVIEW_OUTPUT_EXISTS", "Review output already exists or aliases an input.")
+        try:
+            if path.exists() and os.path.samefile(path, source):
+                raise _error("REVIEW_OUTPUT_EXISTS", "Review output already exists or aliases an input.")
+        except OSError:
+            raise _error("REVIEW_OUTPUT_FAILED", "Review output could not be written.") from None
     try:
         with path.open("xb") as output:
             output.write(payload)
