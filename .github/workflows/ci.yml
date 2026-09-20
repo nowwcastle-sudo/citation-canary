@@ -1,0 +1,53 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  windows:
+    name: Windows ${{ matrix.os }} / Python ${{ matrix.python-version }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-2022, windows-latest]
+        python-version: ['3.11', '3.14']
+    steps:
+      - name: Check out source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Check Python version
+        shell: pwsh
+        run: |
+          $version = python --version
+          if ($LASTEXITCODE -ne 0 -or $version -notmatch '^Python 3\.(1[1-9]|[2-9][0-9])\.') { throw 'Python 3.11 or newer is required.' }
+          Write-Output $version
+      - name: Run the complete test suite
+        shell: pwsh
+        run: |
+          $env:PYTHONPATH = (Resolve-Path 'src').Path
+          python -m unittest discover -s tests -p 'test_*.py'
+          if ($LASTEXITCODE -ne 0) { throw 'Complete test suite failed.' }
+          python -m unittest tests.test_zipapp
+          if ($LASTEXITCODE -ne 0) { throw 'Zipapp test suite failed.' }
+      - name: Build a fresh allowlisted zipapp
+        shell: pwsh
+        run: |
+          $first = Join-Path $env:RUNNER_TEMP ('citation-canary-first-' + [guid]::NewGuid().ToString('N') + '.pyz')
+          $second = Join-Path $env:RUNNER_TEMP ('citation-canary-second-' + [guid]::NewGuid().ToString('N') + '.pyz')
+          python tools/build_zipapp.py --source src --output $first
+          if ($LASTEXITCODE -ne 0 -or -not (Test-Path -LiteralPath $first -PathType Leaf)) { throw 'First zipapp build failed.' }
+          python tools/build_zipapp.py --source src --output $second
+          if ($LASTEXITCODE -ne 0 -or -not (Test-Path -LiteralPath $second -PathType Leaf)) { throw 'Second zipapp build failed.' }
+          $firstHash = (Get-FileHash -Algorithm SHA256 -LiteralPath $first).Hash
+          $secondHash = (Get-FileHash -Algorithm SHA256 -LiteralPath $second).Hash
+          if ($firstHash -cne $secondHash) { throw 'Zipapp build is not byte-reproducible.' }
+          Write-Output "deterministic_sha256=$firstHash"

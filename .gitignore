@@ -1,0 +1,18 @@
+# SWE cycle state is local workflow metadata.
+.swe-cycle/
+.superpowers/
+.worktrees/
+__pycache__/
+*.py[cod]
+dist/
+
+# Local source documents and generated review material must never enter Git.
+citation-corpus/
+local-corpus/
+local-output/
+outputs/
+*.hwpx
+
+# Python test-run cache is local and reproducible.
+__pycache__/
+*.py[cod]
