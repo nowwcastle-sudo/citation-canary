@@ -54,4 +54,29 @@ The source-built candidate's help, demo, scan, review, render and compare
 checks each exited 0, and the synthetic document's SHA-256 matched its scan
 report. Focused tests: 43, exit 0; full regression: 151, exit 0. CSS output
 assertion passed, but 375px actual-browser overflow is pending independent
-parent recheck. No remote CI, real corpus or source-authenticity proof is claimed.
+parent recheck at the time of that fix report. No remote CI, real corpus or source-authenticity proof is claimed.
+
+## Final local review checkpoint
+
+Runtime source `bae78555d008113d656e80133d2081aeb0ad8a41` passed the
+independent scoped re-review: all five final findings addressed, with no new
+Critical/Important breakage. The full local suite was 151 tests, exit 0
+(including 20 zipapp tests, not 171 tests). Parent readback confirmed both
+15-member candidates have the final `aa0dbe04...` SHA-256 stated above.
+
+The pending browser check is now complete for synthetic Chrome usage:
+at 375px, document width is 375px rather than the earlier 528px. The full
+digest is unchanged and wraps; keyboard focus and expanding the document
+label work. axe 4.12.1 reported 22 passes, 0 violations and 0 incomplete.
+Desktop rendering was also captured. A separate junction probe confirmed
+target and marker identity, marker bytes and absence of unintended output
+in eight checks, exit 0. This does not generalize to every filesystem race.
+
+Dedicated static security diff scan
+`c8f9669e-cc67-47ac-8edb-93d6d7aaa05e` reviewed all six changed source files
+at this runtime source and was sealed with no reportable findings. It is
+not a whole-repository or all-environment safety certificate. Report and
+ledger authenticity remain unverified assertions, and operator-selected
+network-backed paths are not an OS-wide offline isolation guarantee.
+Remote Windows/Python CI, actual institution documents and new publication
+are still unexecuted; the old release is unchanged.
