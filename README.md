@@ -1,14 +1,33 @@
 # Citation Canary — experimental OSS
 
+[English](https://github.com/nowwcastle-sudo/citation-canary/blob/main/README.md) · [한국어](https://github.com/nowwcastle-sudo/citation-canary/blob/main/README.ko.md)
+
 Citation Canary reviews citation candidates in an existing local HWPX document
 without modifying the file or accessing the network. It matches candidates
 against an operator-supplied, dated official-source catalog and produces an
 evidence report for human review. This is **experimental open-source software**.
 Legal correctness, case authenticity and real human adoption are unverified.
-The first experimental release provides explicit synthetic setup with
-`--demo`; ordinary scanning remains read-only.
+Use it to assemble a local review queue before checking citations yourself.
+`--demo` creates fictional inputs; a real scan reads your inputs and writes a
+report only to stdout or the requested output file.
 
 License: Apache License 2.0. See [`LICENSE`](LICENSE).
+
+## What it does
+
+| Stage | Input and behavior | Result or boundary |
+| --- | --- | --- |
+| Read | One HWPX ZIP/XML document and one local catalog | Collects section text nodes; no HWP, PDF, DOCX or image/OCR input |
+| Find | Exact titles already in the catalog | Associates the first following `제N조` or `제N조의N` within 32 characters, before the next title, in the same text node |
+| Match | Explicit review date and catalog version intervals | Assigns `CURRENT`, `HISTORY`, `REVIEW` or `UNKNOWN`, with a reason |
+| Report | Candidate locations, catalog evidence and source hashes | JSON for human review; no automatic corrections |
+
+Titles split across text nodes, spelling variants, and detailed paragraph/item
+semantics are outside this narrow matching rule. An unmatched marker such as
+`법`, `규정`, `고시`, `훈령` or `예규` can produce an ambiguous candidate. Some
+unsupported citations produce no candidate. The scanner checks source identity
+again before returning a report; a changed source yields
+`SOURCE_CHANGED_DURING_SCAN` with no evidence items.
 
 ## Download the experimental release
 
@@ -26,6 +45,12 @@ The program itself runs offline after download.
 To build from source, follow the [source build guide](docs/release/public-candidate.md).
 The exact archive has eleven entries, including the Apache license.
 
+The tag and assets for `v0.2.0-experimental.1` remain fixed. Repository `main`
+documentation may be newer than the README at that fixed release tag;
+`README.ko.md` is a repository-only translation and is not an extra zipapp entry.
+Use the tagged documentation when checking exactly what a downloaded release
+contains.
+
 ## Boundaries
 
 - Requires Python 3.11 or newer. The release is a Python zipapp
@@ -41,6 +66,12 @@ The exact archive has eleven entries, including the Apache license.
   legal, compliance, validity, or mandatory-change verdicts.
 
 ## Verify and run
+
+You need a terminal and Python 3.11 or newer. On Windows, open PowerShell in the
+download folder. If `python` is unavailable, install Python from
+[python.org](https://www.python.org/downloads/), reopen PowerShell, and confirm
+the version before continuing. Hancom Office and an API key are not required
+to run the scanner. The examples below use Windows PowerShell paths.
 
 Download both assets from the public
 [v0.2.0-experimental.1 prerelease](https://github.com/nowwcastle-sudo/citation-canary/releases/tag/v0.2.0-experimental.1)
@@ -139,11 +170,55 @@ Options (scan requirements apply only when `--demo` is absent):
 
 Keep the original HWPX unchanged and keep report output separate from it.
 
+## Scan your own document
+
+Prepare a separate catalog using the [schema guide](docs/catalog-schema-v1.md).
+Confirm the official source outside this program, then enter its exact title,
+provision labels, stable provision IDs, version intervals, HTTPS source URL and
+retrieval timestamp. The root has `schema_version` (the string `"1"`) and a
+nonempty `records` array. Each record has `record_id`, `official_source`, and
+`versions`; the guide lists every required nested field and a complete example.
+Extra fields and duplicate JSON keys are rejected.
+
+Version intervals include `effective_from` and exclude `effective_to`. Versions
+must be ordered without overlap; the last version must have `effective_to: null`.
+Keep the same `canonical_id` only when human review establishes that a provision
+continues across versions. Save the file as UTF-8 without BOM. The scanner
+does not authenticate official authority, decide continuity, or enforce freshness.
+The fictional demo catalog is unsuitable as evidence for a real document.
+
+Place the reviewed document at `review-input.hwpx` and the separately prepared
+catalog at `review-catalog.json` in the verified zipapp folder. Keep a copy of
+the original document. Run the following block there; it asks for the review
+date explicitly. Choose an unused report name before repeating it.
+
+```powershell
+$reviewDate=Read-Host 'Review date (YYYY-MM-DD)'
+python .\citation-canary-0.2.0.pyz --document .\review-input.hwpx --as-of $reviewDate --catalog .\review-catalog.json --output .\review-report.json
+$LASTEXITCODE
+Get-Content -Raw -Encoding UTF8 -LiteralPath '.\review-report.json'
+```
+
+Check the exit code before reading a saved report. A failed run may leave an
+older report at the same path. Confirm `as_of`, `document_sha256` and
+`catalog_sha256`, inspect `collection_errors`, then review the items. A scan
+cannot decide which date applies to your document.
+
 Current-source scans also enforce [structural and reference-processing limits](docs/runtime-resource-limits.md).
 Large or repetitive inputs fail with `HWPX_LIMIT_EXCEEDED` or
 `REFERENCE_LIMIT_EXCEEDED` and no partial evidence items. These limits can reject
 a valid large document; they are not a legal finding. Use a reviewed small
 catalog and preserve the original input for a separately scoped review.
+
+The current source limits compressed input to 100 MiB, archive entries to
+10,000, each section to 20 MiB, and total uncompressed members to 200 MiB.
+Across sections it permits 200,000 XML elements, 100,000 text elements and
+20 × 1,024 × 1,024 retained characters; nesting depth is limited to 128 and
+section-number suffixes to 32 digits. Reference extraction permits 100,000
+examined matches and 10,000 candidates, both per text node and per document.
+These limits do not bound independently supplied catalog loading/resolution or
+promise a fixed runtime or peak memory use. See the linked guide for counting
+rules and release-specific source details.
 
 ## Report and exit contract
 
@@ -194,6 +269,30 @@ location, not a page number. `reference` names the detected title/provision;
 interval. A historical row can include `version_transition`. Inspect the
 reason and evidence before recording a human disposition; no document edit
 follows automatically.
+
+The report root contains `schema_version`, `document_name`, `document_sha256`,
+`as_of`, `catalog_sha256`, `items`, and `collection_errors`. Each item includes
+`locator`, `reference`, `status`, `reason_code`, and `evidence`.
+Collection errors include `code`, `stage`, `fatal`, `locator`, and `message`.
+Start with collection errors: an empty `items` array after a fatal failure
+means the scan could not supply evidence.
+
+## Troubleshooting
+
+| Symptom or message | What to check |
+| --- | --- |
+| Checksum mismatch | Stop; preserve the files and download the matching pair into a new folder. |
+| `ARGUMENT_ERROR` | Supply all three scan inputs, or use `--demo` alone. Option abbreviations are not accepted. |
+| `Invalid --as-of date. Expected YYYY-MM-DD.` | Use a real calendar date in that exact format. |
+| `Document file was not found.` / `Catalog file was not found.` | Check the working folder and actual filename; quote paths containing spaces. |
+| `Catalog is not valid UTF-8 JSON.` | Check UTF-8 without BOM, JSON syntax and duplicate keys. |
+| `Catalog does not conform to schema version 1.` | Check exact fields, dates, intervals, URLs, timestamps and unique IDs against the schema guide. |
+| `DEMO_DESTINATION_INVALID` | Choose a new directory under an existing parent; preserve previous or partial demo files. |
+| `DEMO_CREATE_FAILED` | Check write access and storage; partial files remain. Retry with a new directory. |
+| `HWPX_LIMIT_EXCEEDED` / `REFERENCE_LIMIT_EXCEEDED` | Preserve the original; arrange a separately scoped review. Do not treat empty items as clearance. |
+| `SOURCE_CHANGED_DURING_SCAN` | Stop concurrent editing and scan a stable local copy. |
+| `UNEXPECTED_ERROR` | Check output-parent existence, write access and storage; record the safe message and exit code for support. |
+| Exit `0` with `REVIEW`, `UNKNOWN`, or no items | Inspect the reasons and extraction limits. Exit `0` describes execution, not legal correctness. |
 
 ## Support and release limits
 
