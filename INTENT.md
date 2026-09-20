@@ -10,4 +10,4 @@ Never edit the HWPX or turn an evidence status into a legal verdict.
 
 Meaningful feature tests and the complete existing regressions are explicitly
 requested. The written design at docs/superpowers/specs/2026-09-20-local-completion-design.md
-is for owner review; implementation and new passing results are not claimed.
+was approved by the owner on 2026-09-20 ("설계 승인"); implementation and new passing results are not claimed.
