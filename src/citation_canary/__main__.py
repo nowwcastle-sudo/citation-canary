@@ -129,6 +129,11 @@ def main(argv: Sequence[str] | None = None) -> int:
         review_parser.add_argument('--disposition', choices=('confirm', 'reject', 'investigate', 'defer'))
         review_parser.add_argument('--stage', choices=('triage', 'evidence', 'decision'))
         tokens = argv[1:]
+        if tokens in (['--help'], ['-h']):
+            try:
+                review_parser.parse_args(tokens)
+            except SystemExit as error:
+                return int(error.code)
         flags = [token.split('=', 1)[0] for token in tokens if token.startswith('--')]
         if any(flags.count(flag) != 1 for flag in ('--report', '--ledger', '--action')) or \
                 any(flags.count(flag) > 1 for flag in ('--item', '--disposition', '--stage')):

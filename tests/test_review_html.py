@@ -11,6 +11,15 @@ from tests.test_review_ledger import report_fixture
 
 
 class RenderTests(unittest.TestCase):
+    def test_long_digest_and_escaped_dynamic_tokens_have_wrap_rule(self):
+        report = report_fixture()
+        report['items'][0]['reference']['title'] = '<' + 'A' * 600 + '>'
+        html = render_review(report)
+        self.assertIn('overflow-wrap:anywhere', html)
+        self.assertIn('&lt;' + 'A' * 600 + '&gt;', html)
+        self.assertIn('Report digest (SHA-256): <code>', html)
+        self.assertNotIn('<' + 'A' * 600 + '>', html)
+
     def test_empty_report_is_unreviewed_not_complete(self):
         report = report_fixture()
         report['items'] = []

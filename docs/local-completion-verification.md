@@ -21,7 +21,7 @@ the ordinary full-suite run below was not instrumented. `not-run` is not a pass.
 | CC-L04 static HTML | Task 3 / `review_html.py` `55a0e72f3b568946bdf3ee32f0aebb03bf4c64f0659a5fc120d2617f9e13c9c1` | `python -m unittest tests.test_review_html` / 6 tests, 28 calls | 0 | OK; escaping, safe links, priority, digest and timing |
 | CLI and 15-member source candidate | Task 3 / `__main__.py` `56f790e2ced92cb65e585fb22f51b4e4bef8244118cc2e26a9c4135f7d33734d`; `build_zipapp.py` `b60aaa458cd5053acde7f9dfb47203ea32844b025692abb512f95115b2e6bac6` | `python -m unittest tests.test_review_cli tests.test_zipapp` / 8+20 tests, 40+285 calls | 0 | OK; actual zipapp scan/review/render/compare and exact 15 members |
 | Complete local regression, historical Task 3 baseline | All / pre-fix `b17425ba` source SHAs above | `python -m unittest discover -s tests -v` / 145 tests, assertion calls not instrumented for this run | 0 | OK on pre-fix source; not rerun for same-locator fix yet |
-| Complete regression after same-locator fix | Current source SHA above | `python -m unittest discover -s tests -v` | not-run | Pending parent final gate after all code and language edits |
+| Complete regression after consolidated final fix | `comparison.py` `ec6b3fd47afcf74e43d8a15b826903e526c5879236ba6afa20758aa1d3c0a213`; `review_html.py` `2d56170b9d54409cfd8a4487c70cc3ab33e0bf692b268cbd1831fbd321ecfb4b`; CLI `8390802ca7d6f18d845c157e54d222b25987898b1880b893320b8b131710862d` | `PYTHONPATH=src python -m unittest discover -s tests -v` / 151 tests, assertion calls not instrumented | 0 | OK on local Windows; actual junction and post-close replacement tests passed; parent browser check pending |
 | Windows 2022/latest × Python 3.11/3.14 | Remote after authorized branch publication | CI matrix | not-run | local tests cannot establish remote matrix results |
 
 The historical tagged release remains an 11-member archive; candidate build
@@ -46,3 +46,12 @@ The focused package suite `python -m unittest tests.test_zipapp` ran 20 tests,
 exit 0. This new candidate hash supersedes the pre-fix hash for current
 runtime bytes; the parent final gate will establish final artifact identity
 again after remaining edits. The fixed tagged 11-member release is unchanged.
+
+Consolidated final fix candidate: two fresh builds exited 0, both exact 15
+members with SHA-256
+`aa0dbe04c50af6fe5ce697f1f6c955996b6b59c8c91a53f51b1584df636bebbe`.
+The source-built candidate's help, demo, scan, review, render and compare
+checks each exited 0, and the synthetic document's SHA-256 matched its scan
+report. Focused tests: 43, exit 0; full regression: 151, exit 0. CSS output
+assertion passed, but 375px actual-browser overflow is pending independent
+parent recheck. No remote CI, real corpus or source-authenticity proof is claimed.

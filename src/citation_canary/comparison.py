@@ -32,11 +32,19 @@ def compare_reports(before: dict[str, object], after: dict[str, object], *,
     result: dict[str, object] = {'schema': 'citation-comparison/1', 'comparable': False,
                                  'relationship': relationship, 'changes': [],
                                  'unresolved': [], 'decision_transfer': False}
+    changes: list[dict[str, object]] = result['changes']
+    metadata_changes = []
+    if same_document or related_versions:
+        for kind, field in (('catalog', 'catalog_sha256'), ('as_of', 'as_of')):
+            if before[field] != after[field]:
+                metadata_changes.append(_change(kind, None, None, before[field], after[field]))
     if before['collection_errors'] or after['collection_errors']:
+        changes.extend(metadata_changes)
         result['unresolved'].append({'reason': 'collection_errors', 'before_item_numbers': [],
                                      'after_item_numbers': []})
         return result
     if not before['items'] or not after['items']:
+        changes.extend(metadata_changes)
         result['unresolved'].append({'reason': 'empty_report_not_completion',
                                      'before_item_numbers': [], 'after_item_numbers': []})
         return result
@@ -45,7 +53,6 @@ def compare_reports(before: dict[str, object], after: dict[str, object], *,
                                      'after_item_numbers': []})
         return result
     result['comparable'] = True
-    changes: list[dict[str, object]] = result['changes']
     unresolved: list[dict[str, object]] = result['unresolved']
     old_items, new_items = before['items'], after['items']
     old_counts = Counter(_identity(item) for item in old_items)
@@ -96,7 +103,5 @@ def compare_reports(before: dict[str, object], after: dict[str, object], *,
                                'before_item_numbers': [], 'after_item_numbers': [number]})
         else:
             changes.append(_change('added', None, number, None, item))
-    for kind, field in (('catalog', 'catalog_sha256'), ('as_of', 'as_of')):
-        if before[field] != after[field]:
-            changes.append(_change(kind, None, None, before[field], after[field]))
+    changes.extend(metadata_changes)
     return result

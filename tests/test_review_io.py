@@ -12,6 +12,7 @@ from citation_canary.report import (
     CollectionError, Evidence, Reference, ScanItem, ScanReport, ScanRequestError,
     Status, VersionTransition,
 )
+from citation_canary import review_io
 from citation_canary.review_io import canonical_digest, read_json, validate_report, write_new
 
 
@@ -94,34 +95,31 @@ class ReviewInputTests(unittest.TestCase):
         with self.assertRaises(ScanRequestError):
             validate_report(value)
 
-    def test_replacement_attempt_while_open_rejected(self):
+    def test_successful_replacement_after_close_rejected_by_path_identity(self):
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / 'report.json'
             path.write_text(json.dumps(report()), encoding='utf-8')
-            original = Path.open
+            self.assertEqual(read_json(path), report())  # intact-path positive control
+            original_identity = (path.stat().st_dev, path.stat().st_ino)
+            original_safe_path = review_io._safe_path
+            checks = 0
 
-            class ReplacingReader:
-                def __init__(self, handle):
-                    self.handle = handle
-                def __enter__(self):
-                    return self
-                def __exit__(self, *args):
-                    return self.handle.__exit__(*args)
-                def fileno(self):
-                    return self.handle.fileno()
-                def read(self, size):
-                    data = self.handle.read(size)
+            def replace_before_revalidation(target, *, existing):
+                nonlocal checks
+                checks += 1
+                if checks == 2:
                     replacement = path.with_suffix('.replacement')
-                    replacement.write_bytes(data)
-                    os.replace(replacement, path)
-                    return data
+                    replacement.write_bytes(path.read_bytes())
+                    os.replace(replacement, path)  # handle has closed; real OS replacement must succeed
+                return original_safe_path(target, existing=existing)
 
-            def replacing_open(target, *args, **kwargs):
-                handle = original(target, *args, **kwargs)
-                return ReplacingReader(handle) if target == path else handle
-
-            with patch.object(Path, 'open', replacing_open), self.assertRaises(ScanRequestError):
-                read_json(path)
+            with patch.object(review_io, '_safe_path', replace_before_revalidation):
+                with self.assertRaises(ScanRequestError) as caught:
+                    read_json(path)
+            self.assertEqual(checks, 2)
+            self.assertEqual(caught.exception.code, 'REVIEW_JSON_INVALID')
+            self.assertNotEqual((path.stat().st_dev, path.stat().st_ino), original_identity)
+            self.assertEqual(read_json(path), report())
 
     def test_write_new_no_clobber_alias_and_source_invariance(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -180,7 +178,7 @@ class ReviewInputTests(unittest.TestCase):
             self.assertEqual(source.read_bytes(), b'original')
             self.assertEqual(output.read_bytes(), b'existing')
 
-    @unittest.skipUnless(os.name == 'nt', 'Windows junction test')
+    @unittest.skipUnless(os.name == 'nt', 'Windows directory symlink test')
     def test_parent_directory_symlink_rejected(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
@@ -190,6 +188,34 @@ class ReviewInputTests(unittest.TestCase):
             os.symlink(target, junction, target_is_directory=True)
             with self.assertRaises(ScanRequestError):
                 write_new(junction / 'out.html', b'x', ())
+
+    @unittest.skipUnless(os.name == 'nt', 'Windows junction test')
+    def test_actual_parent_junction_rejected_and_target_preserved(self):
+        import subprocess
+        import stat
+
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            target = root / 'target'
+            target.mkdir()
+            marker = target / 'marker.bin'
+            marker.write_bytes(b'original target')
+            junction = root / 'junction'
+            created = subprocess.run(['cmd', '/c', 'mklink', '/J', str(junction), str(target)],
+                                     capture_output=True, text=True)
+            self.assertEqual(created.returncode, 0, 'local junction creation failed')
+            try:
+                self.assertTrue(junction.lstat().st_file_attributes & stat.FILE_ATTRIBUTE_REPARSE_POINT)
+                self.assertFalse(junction.is_symlink())
+                with self.assertRaises(ScanRequestError) as caught:
+                    write_new(junction / 'out.html', b'x', ())
+                self.assertEqual(caught.exception.code, 'REVIEW_PATH_INVALID')
+                self.assertFalse((target / 'out.html').exists())
+                self.assertEqual(marker.read_bytes(), b'original target')
+            finally:
+                os.rmdir(junction)  # remove only the junction entry, never recurse into target
+            self.assertTrue(target.is_dir())
+            self.assertEqual(marker.read_bytes(), b'original target')
 
 
 if __name__ == '__main__':

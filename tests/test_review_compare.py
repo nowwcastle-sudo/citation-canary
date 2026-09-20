@@ -26,6 +26,42 @@ class CompareTests(unittest.TestCase):
         self.assertEqual([change['type'] for change in result['changes']], ['catalog', 'as_of'])
         self.assertFalse(result['decision_transfer'])
 
+    def test_known_metadata_survives_empty_or_error_report_without_resolution(self):
+        before = report_fixture()
+        for condition in ('populated', 'empty', 'collection_error'):
+            with self.subTest(condition=condition):
+                after = copy.deepcopy(before)
+                after['catalog_sha256'] = 'c' * 64
+                after['as_of'] = '2025-01-01'
+                if condition != 'populated':
+                    after['items'] = []
+                if condition == 'collection_error':
+                    after['collection_errors'] = [{'code': 'SYNTHETIC_ERROR', 'stage': 'parse',
+                                                   'fatal': True, 'locator': None, 'message': 'synthetic'}]
+                result = compare_reports(before, after)
+                self.assertEqual([row['type'] for row in result['changes']], ['catalog', 'as_of'])
+                self.assertEqual([(row['before'], row['after']) for row in result['changes']],
+                                 [('b' * 64, 'c' * 64), ('2024-12-31', '2025-01-01')])
+                self.assertEqual(result['comparable'], condition == 'populated')
+                self.assertFalse(result['decision_transfer'])
+                if condition != 'populated':
+                    self.assertEqual(result['unresolved'][0]['reason'],
+                                     'collection_errors' if condition == 'collection_error'
+                                     else 'empty_report_not_completion')
+                    self.assertFalse(any(row['type'] in ('removed', 'added', 'status', 'evidence')
+                                         for row in result['changes']))
+
+    def test_unrelated_document_does_not_compare_metadata_even_when_empty(self):
+        before = report_fixture()
+        after = copy.deepcopy(before)
+        after['document_sha256'] = 'f' * 64
+        after['items'] = []
+        after['catalog_sha256'] = 'c' * 64
+        after['as_of'] = '2025-01-01'
+        self.assertEqual(compare_reports(before, after)['changes'], [])
+        self.assertEqual([row['type'] for row in compare_reports(before, after, related_versions=True)['changes']],
+                         ['catalog', 'as_of'])
+
     def test_add_remove_and_status_evidence_are_distinct(self):
         before = report_fixture()
         after = copy.deepcopy(before)

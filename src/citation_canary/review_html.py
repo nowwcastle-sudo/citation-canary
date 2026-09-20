@@ -76,6 +76,7 @@ def render_review(report: dict[str, object], ledger: dict[str, object] | None = 
             '<meta name="viewport" content="width=device-width,initial-scale=1">'
             '<title>Citation Canary local review</title><style>'
             'body{font:16px/1.55 system-ui,sans-serif;max-width:72rem;margin:2rem auto;padding:0 1rem;color:#182230}'
+            'main{overflow-wrap:anywhere}'
             'section{margin:1.5rem 0}article{border-top:1px solid #aab4c0;padding:.7rem 0}'
             '.alert{border:2px solid #8c3b20;padding:1rem;background:#fff2e9}'
             'a{color:#064f91}a:focus-visible{outline:3px solid #a85800}'

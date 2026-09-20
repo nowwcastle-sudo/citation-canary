@@ -47,7 +47,9 @@ unique unchanged-locator title/provision pairing is only a candidate; duplicate
 references cannot be paired by position across changed document hashes. The
 comparison does not read or transfer dispositions. Catalog changes, review
 date changes, evidence and status changes are separate records. Collection
-errors make the comparison unavailable for resolution claims. A zero-item
+errors or empty items make item comparison unavailable for resolution claims;
+known catalog and review-date differences remain visible for the same document
+or explicitly related versions. An unrelated document has no such comparison. A zero-item
 report or empty change list is not a completed legal review.
 
 Input reports use scan schema string `"1"`; ledgers use

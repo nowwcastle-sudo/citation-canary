@@ -4,6 +4,8 @@ import contextlib
 import io
 import json
 import os
+import subprocess
+import sys
 import tempfile
 import unittest
 from pathlib import Path
@@ -15,6 +17,23 @@ from tests.test_review_ledger import report_fixture
 
 
 class ReviewCliTests(unittest.TestCase):
+    def test_review_help_process_succeeds_and_duplicate_guards_remain(self):
+        environment = os.environ.copy()
+        source = str(Path(__file__).resolve().parents[1] / 'src')
+        environment['PYTHONPATH'] = source + os.pathsep + environment.get('PYTHONPATH', '')
+        completed = subprocess.run([sys.executable, '-m', 'citation_canary', 'review', '--help'],
+                                   capture_output=True, text=True, env=environment)
+        self.assertEqual(completed.returncode, 0)
+        self.assertIn('--action', completed.stdout)
+        self.assertIn('--report', completed.stdout)
+        self.assertEqual(completed.stderr, '')
+        duplicate = subprocess.run([sys.executable, '-m', 'citation_canary', 'review',
+                                    '--report', 'missing', '--report', 'missing', '--ledger', 'missing',
+                                    '--action', 'decide', '--item', '1', '--disposition', 'confirm'],
+                                   capture_output=True, text=True, env=environment)
+        self.assertEqual(duplicate.returncode, 2)
+        self.assertEqual(duplicate.stderr, 'ARGUMENT_ERROR\n')
+
     def test_compare_and_render_do_not_change_inputs(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
