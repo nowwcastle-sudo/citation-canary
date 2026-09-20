@@ -18,6 +18,10 @@ SOURCE_ALLOWLIST = (
     "citation_canary/hwpx.py",
     "citation_canary/references.py",
     "citation_canary/report.py",
+    "citation_canary/review_io.py",
+    "citation_canary/review.py",
+    "citation_canary/comparison.py",
+    "citation_canary/review_html.py",
     "citation_canary/scanner.py",
 )
 METADATA_ALLOWLIST = ("LICENSE",)

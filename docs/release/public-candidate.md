@@ -5,8 +5,12 @@ https://github.com/nowwcastle-sudo/citation-canary on main.
 For release-equivalent source, check out tag v0.2.0-experimental.1.
 A local build is not a published release; keep its output and source identity.
 
-The current archive contains exactly eleven entries: eight runtime Python
+The fixed tagged release archive contains eleven entries: eight runtime Python
 files, the package directory, the generated root entrypoint and `LICENSE`.
+A build from the current source checkout contains fifteen entries: twelve
+runtime Python files, the package directory, the generated root entrypoint
+and `LICENSE`. The commands below build whichever checkout you selected; do
+not label a current-source candidate as the historical release asset.
 It includes no source HWPX, catalog, report, documentation or test fixture.
 Python 3.11 or newer must already be installed; no package installation is
 needed. Use synthetic inputs only for this procedure.
@@ -31,11 +35,11 @@ $citationTracked = @(git --no-optional-locks status --porcelain=v1 --untracked-f
 if ($LASTEXITCODE -ne 0) { throw 'Cannot record tracked checkout state.' }
 $citationBuild = Join-Path (Get-Location).Path ('dist\public-candidate-' + [guid]::NewGuid().ToString('N'))
 New-Item -ItemType Directory -Path $citationBuild | Out-Null
-$citationArtifact = Join-Path $citationBuild 'citation-canary-0.2.0.pyz'
+$citationArtifact = Join-Path $citationBuild 'citation-canary-local-candidate.pyz'
 & $citationPython .\tools\build_zipapp.py --source .\src --output $citationArtifact
 if ($LASTEXITCODE -ne 0) { throw 'Build failed; preserve this directory for inspection.' }
 $citationHash = (Get-FileHash -LiteralPath $citationArtifact -Algorithm SHA256).Hash.ToLowerInvariant()
-[IO.File]::WriteAllText(($citationArtifact + '.sha256'), ($citationHash + '  citation-canary-0.2.0.pyz' + "`n"), [Text.Encoding]::ASCII)
+[IO.File]::WriteAllText(($citationArtifact + '.sha256'), ($citationHash + '  citation-canary-local-candidate.pyz' + "`n"), [Text.Encoding]::ASCII)
 [IO.File]::WriteAllLines((Join-Path $citationBuild 'source.txt'), @("source_commit=$citationSource", "tracked_changes=$($citationTracked.Count -gt 0)"), [Text.Encoding]::ASCII)
 Get-Content -LiteralPath ($citationArtifact + '.sha256')
 Get-Content -LiteralPath (Join-Path $citationBuild 'source.txt')

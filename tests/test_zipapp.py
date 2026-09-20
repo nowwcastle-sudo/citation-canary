@@ -33,6 +33,10 @@ EXPECTED_ARCHIVE_MEMBERS = {
     "citation_canary/hwpx.py",
     "citation_canary/references.py",
     "citation_canary/report.py",
+    "citation_canary/review_io.py",
+    "citation_canary/review.py",
+    "citation_canary/comparison.py",
+    "citation_canary/review_html.py",
     "citation_canary/scanner.py",
 }
 EXPECTED_SOURCE_ALLOWLIST = (
@@ -43,11 +47,40 @@ EXPECTED_SOURCE_ALLOWLIST = (
     "citation_canary/hwpx.py",
     "citation_canary/references.py",
     "citation_canary/report.py",
+    "citation_canary/review_io.py",
+    "citation_canary/review.py",
+    "citation_canary/comparison.py",
+    "citation_canary/review_html.py",
     "citation_canary/scanner.py",
 )
 
 
 class CitationCanaryZipappTests(unittest.TestCase):
+    def test_archive_runs_review_render_compare_commands_without_pythonpath(self) -> None:
+        self._build_archive()
+        report_path = self.work_dir / 'candidate-report.json'
+        ledger_path = self.work_dir / 'candidate-ledger.json'
+        html_path = self.work_dir / 'candidate-review.html'
+        scan = self._run_archive('--document', str(self.document_path), '--as-of', AS_OF,
+                                 '--catalog', str(self.catalog_path), '--output', str(report_path))
+        self.assertEqual(scan.returncode, 0, scan.stderr)
+        source_before = self.document_path.read_bytes()
+        report_before = report_path.read_bytes()
+        review = self._run_archive('review', '--report', str(report_path), '--ledger', str(ledger_path),
+                                   '--action', 'decide', '--item', '1', '--disposition', 'confirm')
+        self.assertEqual(review.returncode, 0, review.stderr)
+        ledger_before = ledger_path.read_bytes()
+        render = self._run_archive('render', '--report', str(report_path), '--ledger', str(ledger_path),
+                                   '--output', str(html_path))
+        self.assertEqual(render.returncode, 0, render.stderr)
+        self.assertIn(b'<!doctype html>', html_path.read_bytes())
+        compare = self._run_archive('compare', '--before', str(report_path), '--after', str(report_path))
+        self.assertEqual(compare.returncode, 0, compare.stderr)
+        self.assertEqual(json.loads(compare.stdout)['changes'], [])
+        self.assertEqual(self.document_path.read_bytes(), source_before)
+        self.assertEqual(report_path.read_bytes(), report_before)
+        self.assertEqual(ledger_path.read_bytes(), ledger_before)
+
     def setUp(self) -> None:
         self.temp_dir = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp_dir.cleanup)

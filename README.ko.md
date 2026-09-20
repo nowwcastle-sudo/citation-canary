@@ -43,12 +43,40 @@ Citation Canary는 내 컴퓨터의 HWPX 문서에서 법령·행정규칙 인�
 신원을 인증하지 않습니다. 다운로드 후 프로그램 자체는 오프라인으로 실행됩니다.
 
 소스에서 빌드하려면 [소스 빌드 안내](docs/release/public-candidate.md)를 보세요.
-배포 아카이브에는 Apache 라이선스를 포함해 정확히 11개 항목이 들어갑니다.
+고정된 `v0.2.0-experimental.1` 배포 아카이브에는 Apache 라이선스를 포함해
+정확히 11개 항목이 들어갑니다. 현재 소스에서 빌드한 후보는 아래 설명처럼
+구성이 다릅니다.
 
 `v0.2.0-experimental.1` 태그와 배포 파일은 고정되어 있습니다. 저장소 `main`의
 문서는 해당 릴리스 태그의 README보다 최신일 수 있습니다. `README.ko.md`는 저장소에서
 제공하는 번역이며 zipapp에 추가된 항목이 아닙니다. 내려받은 릴리스의 정확한
 구성을 확인할 때는 해당 태그의 문서를 보세요.
+
+## 로컬 검토 후보 (소스 빌드, 기존 릴리스와 별개)
+
+현재 소스에는 사람의 처분 기록, 보수적인 보고서 비교, 오프라인 HTML 열람이
+추가되었습니다. 위 `v0.2.0-experimental.1` 다운로드에는 이 명령이 없습니다.
+소스에서 만든 로컬 후보의 아카이브 항목은 정확히 15개이며, 기존 릴리스의
+11개와 구별해야 합니다. 새 릴리스가 발행됐다는 뜻은 아닙니다. 저장소 루트에서
+PowerShell을 열고, 아래 결과 이름이 아직 사용되지 않았는지 확인한 뒤 한 줄씩
+실행하세요.
+
+```powershell
+python .\tools\build_zipapp.py --source .\src --output .\local-review-candidate.pyz
+python .\local-review-candidate.pyz --demo .\local-review-demo
+python .\local-review-candidate.pyz --document .\local-review-demo\synthetic-review.hwpx --as-of 2024-12-31 --catalog .\local-review-demo\catalog.json --output .\local-review-report.json
+python .\local-review-candidate.pyz review --report .\local-review-report.json --ledger .\local-review-ledger.json --action decide --item 1 --disposition investigate
+python .\local-review-candidate.pyz render --report .\local-review-report.json --ledger .\local-review-ledger.json --output .\local-review.html
+python .\local-review-candidate.pyz compare --before .\local-review-report.json --after .\local-review-report.json
+```
+
+같은 보고서 두 개를 비교하는 마지막 명령은 기능 확인용이며, 변경된 문서를
+검토했다는 증거가 아닙니다. 해시가 다른 보고서는 관계를 사용자가 확인한
+경우에만 `--related-versions`를 붙이세요. 대응은 후보로 남고 처분은 자동으로
+옮겨지지 않습니다. 보고서·처분 기록·HTML에는 민감한 인용 식별자가 있을 수
+있으니 로컬에 보관하고 공개 이슈에 첨부하지 마세요. 자세한 절차와 실패 시
+조치는 [로컬 검토 안내](docs/local-review.md), 실행 증거는
+[로컬 검증 표](docs/local-completion-verification.md)를 보세요.
 
 ## 실행 조건과 주의 범위
 

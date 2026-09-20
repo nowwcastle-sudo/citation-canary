@@ -15,6 +15,75 @@ from tests.test_review_ledger import report_fixture
 
 
 class ReviewCliTests(unittest.TestCase):
+    def test_compare_and_render_do_not_change_inputs(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            before, after, output = root / 'before.json', root / 'after.json', root / 'review.html'
+            raw = json.dumps(report_fixture(), ensure_ascii=False).encode('utf-8')
+            before.write_bytes(raw)
+            after.write_bytes(raw)
+            stream = io.StringIO()
+            with contextlib.redirect_stdout(stream):
+                self.assertEqual(main(['compare', '--before', str(before), '--after', str(after)]), 0)
+            self.assertFalse(json.loads(stream.getvalue())['decision_transfer'])
+            self.assertEqual(main(['render', '--report', str(before), '--output', str(output)]), 0)
+            self.assertIn(b'<!doctype html>', output.read_bytes())
+            self.assertEqual((before.read_bytes(), after.read_bytes()), (raw, raw))
+            self.assertFalse(list(root.glob('*.lock')))
+
+    def test_render_rejects_existing_and_input_alias_without_mutation(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            report, output = root / 'report.json', root / 'review.html'
+            original = json.dumps(report_fixture(), ensure_ascii=False).encode('utf-8')
+            report.write_bytes(original)
+            output.write_bytes(b'old output')
+            for destination in (report, output):
+                with self.subTest(destination=destination):
+                    self.assertEqual(main(['render', '--report', str(report), '--output', str(destination)]), 2)
+            self.assertEqual(report.read_bytes(), original)
+            self.assertEqual(output.read_bytes(), b'old output')
+
+    def test_invalid_ledger_and_duplicate_flags_rejected(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            report, ledger, output = root / 'report.json', root / 'ledger.json', root / 'review.html'
+            report.write_text(json.dumps(report_fixture(), ensure_ascii=False), encoding='utf-8')
+            ledger.write_text('{"schema":"wrong"}', encoding='utf-8')
+            self.assertEqual(main(['render', '--report', str(report), '--ledger', str(ledger),
+                                   '--output', str(output)]), 2)
+            self.assertFalse(output.exists())
+            self.assertEqual(main(['compare', '--before', str(report), '--before', str(report),
+                                   '--after', str(report)]), 2)
+
+    def test_render_rejects_hardlink_and_reparse_parent_without_writing(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            report, alias = root / 'report.json', root / 'alias.json'
+            report.write_text(json.dumps(report_fixture(), ensure_ascii=False), encoding='utf-8')
+            original = report.read_bytes()
+            os.link(report, alias)
+            self.assertEqual(main(['render', '--report', str(report), '--output', str(alias)]), 2)
+            self.assertEqual(report.read_bytes(), original)
+            link = root / 'linked-parent'
+            try:
+                link.symlink_to(root, target_is_directory=True)
+            except (OSError, NotImplementedError):
+                self.skipTest('symlink creation unavailable')
+            self.assertEqual(main(['render', '--report', str(report),
+                                   '--output', str(link / 'new.html')]), 2)
+            self.assertFalse((root / 'new.html').exists())
+
+    def test_compare_render_do_not_open_network_sockets(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            report, output = root / 'report.json', root / 'review.html'
+            report.write_text(json.dumps(report_fixture(), ensure_ascii=False), encoding='utf-8')
+            with patch('socket.socket', side_effect=AssertionError('network attempted')):
+                with contextlib.redirect_stdout(io.StringIO()):
+                    self.assertEqual(main(['compare', '--before', str(report), '--after', str(report)]), 0)
+                self.assertEqual(main(['render', '--report', str(report), '--output', str(output)]), 0)
+
     def test_decide_creates_bound_ledger_without_report_mutation(self):
         with tempfile.TemporaryDirectory() as directory:
             report = Path(directory) / 'report.json'

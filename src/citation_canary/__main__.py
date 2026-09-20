@@ -13,6 +13,9 @@ from .demo import DemoDestinationError, create_demo
 from .report import ScanRequestError
 from .scanner import scan_document
 from .review import update_ledger
+from .comparison import compare_reports
+from .review_html import render_review
+from .review_io import read_json, validate_report, write_new
 
 
 class _SafeArgumentParser(argparse.ArgumentParser):
@@ -69,8 +72,54 @@ def _write_stdout(payload: str) -> None:
     sys.stdout.write(payload)
 
 
+def _read_only_command(argv: list[str]) -> int:
+    command = argv[0]
+    parser = _SafeArgumentParser(prog=f'citation-canary {command}', allow_abbrev=False)
+    if command == 'compare':
+        parser.add_argument('--before', required=True)
+        parser.add_argument('--after', required=True)
+        parser.add_argument('--related-versions', action='store_true')
+        allowed = ('--before', '--after', '--related-versions')
+    else:
+        parser.add_argument('--report', required=True)
+        parser.add_argument('--ledger')
+        parser.add_argument('--output', required=True)
+        allowed = ('--report', '--ledger', '--output')
+    flags = [token.split('=', 1)[0] for token in argv[1:] if token.startswith('--')]
+    if any(flags.count(flag) > 1 for flag in allowed):
+        print('ARGUMENT_ERROR', file=sys.stderr)
+        return 2
+    try:
+        args = parser.parse_args(argv[1:])
+    except SystemExit as error:
+        return int(error.code)
+    try:
+        if command == 'compare':
+            before = validate_report(read_json(Path(args.before)))
+            after = validate_report(read_json(Path(args.after)))
+            result = compare_reports(before, after, related_versions=args.related_versions)
+            _write_stdout(json.dumps(result, ensure_ascii=False, sort_keys=True, indent=2) + '\n')
+        else:
+            report_path = Path(args.report)
+            report = validate_report(read_json(report_path))
+            ledger_path = Path(args.ledger) if args.ledger is not None else None
+            ledger = read_json(ledger_path) if ledger_path is not None else None
+            html = render_review(report, ledger)
+            protected = (report_path,) if ledger_path is None else (report_path, ledger_path)
+            write_new(Path(args.output), html.encode('utf-8'), protected)
+        return 0
+    except ScanRequestError as error:
+        print(error.code, file=sys.stderr)
+        return 1 if error.code == 'REVIEW_OUTPUT_FAILED' else 2
+    except Exception:
+        print('REVIEW_OUTPUT_FAILED' if command == 'render' else 'REVIEW_COMPARE_FAILED', file=sys.stderr)
+        return 1
+
+
 def main(argv: Sequence[str] | None = None) -> int:
     argv = list(sys.argv[1:] if argv is None else argv)
+    if argv and argv[0] in ('compare', 'render'):
+        return _read_only_command(argv)
     if argv and argv[0] == 'review':
         review_parser = _SafeArgumentParser(prog='citation-canary review', allow_abbrev=False)
         review_parser.add_argument('--report', required=True)

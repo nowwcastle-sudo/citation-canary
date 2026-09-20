@@ -43,13 +43,41 @@ another release. SHA-256 detects mismatched bytes, not publisher authenticity.
 The program itself runs offline after download.
 
 To build from source, follow the [source build guide](docs/release/public-candidate.md).
-The exact archive has eleven entries, including the Apache license.
+The fixed `v0.2.0-experimental.1` release archive has eleven entries,
+including the Apache license. A build from the current source has a different
+allowlist; see the candidate section below.
 
 The tag and assets for `v0.2.0-experimental.1` remain fixed. Repository `main`
 documentation may be newer than the README at that fixed release tag;
 `README.ko.md` is a repository-only translation and is not an extra zipapp entry.
 Use the tagged documentation when checking exactly what a downloaded release
 contains.
+
+## Local review candidate (source build, not the tagged release)
+
+The current source tree adds a separate human-decision ledger, conservative
+report comparison, and an offline HTML view. These commands are **not** in the
+fixed `v0.2.0-experimental.1` download above. Build a local candidate from
+this source tree; its exact package has 15 members rather than that release's
+11. No new release or remote availability is implied. From the repository
+root in PowerShell, choose unused output names and run one line at a time:
+
+```powershell
+python .\tools\build_zipapp.py --source .\src --output .\local-review-candidate.pyz
+python .\local-review-candidate.pyz --demo .\local-review-demo
+python .\local-review-candidate.pyz --document .\local-review-demo\synthetic-review.hwpx --as-of 2024-12-31 --catalog .\local-review-demo\catalog.json --output .\local-review-report.json
+python .\local-review-candidate.pyz review --report .\local-review-report.json --ledger .\local-review-ledger.json --action decide --item 1 --disposition investigate
+python .\local-review-candidate.pyz render --report .\local-review-report.json --ledger .\local-review-ledger.json --output .\local-review.html
+python .\local-review-candidate.pyz compare --before .\local-review-report.json --after .\local-review-report.json
+```
+
+The same-report comparison is a command check, not proof of a reviewed
+revision. To compare changed document hashes, provide two reports and
+`--related-versions` only when you know their relationship; matches remain
+candidates and decisions do not transfer. The report, ledger and HTML can
+carry sensitive citation identifiers. Keep them local and do not attach them
+to issues. See [local review and recovery](docs/local-review.md) and the
+[local verification ledger](docs/local-completion-verification.md).
 
 ## Boundaries
 
