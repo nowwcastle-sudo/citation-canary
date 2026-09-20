@@ -12,6 +12,7 @@ from typing import Sequence
 from .demo import DemoDestinationError, create_demo
 from .report import ScanRequestError
 from .scanner import scan_document
+from .review import update_ledger
 
 
 class _SafeArgumentParser(argparse.ArgumentParser):
@@ -69,6 +70,43 @@ def _write_stdout(payload: str) -> None:
 
 
 def main(argv: Sequence[str] | None = None) -> int:
+    argv = list(sys.argv[1:] if argv is None else argv)
+    if argv and argv[0] == 'review':
+        review_parser = _SafeArgumentParser(prog='citation-canary review', allow_abbrev=False)
+        review_parser.add_argument('--report', required=True)
+        review_parser.add_argument('--ledger', required=True)
+        review_parser.add_argument('--action', required=True, choices=('decide', 'start', 'finish'))
+        review_parser.add_argument('--item', type=int)
+        review_parser.add_argument('--disposition', choices=('confirm', 'reject', 'investigate', 'defer'))
+        review_parser.add_argument('--stage', choices=('triage', 'evidence', 'decision'))
+        tokens = argv[1:]
+        flags = [token.split('=', 1)[0] for token in tokens if token.startswith('--')]
+        if any(flags.count(flag) != 1 for flag in ('--report', '--ledger', '--action')) or \
+                any(flags.count(flag) > 1 for flag in ('--item', '--disposition', '--stage')):
+            print('ARGUMENT_ERROR', file=sys.stderr)
+            return 2
+        try:
+            review_args = review_parser.parse_args(tokens)
+        except SystemExit as error:
+            return int(error.code)
+        if review_args.action == 'decide':
+            valid = review_args.item is not None and review_args.disposition is not None and review_args.stage is None
+        else:
+            valid = review_args.item is None and review_args.disposition is None and review_args.stage is not None
+        if not valid:
+            print('ARGUMENT_ERROR', file=sys.stderr)
+            return 2
+        try:
+            update_ledger(Path(review_args.ledger), Path(review_args.report),
+                          action=review_args.action, item_number=review_args.item,
+                          disposition=review_args.disposition, stage=review_args.stage)
+            return 0
+        except ScanRequestError as error:
+            print(error.code, file=sys.stderr)
+            return 2
+        except Exception:
+            print('REVIEW_WRITE_FAILED', file=sys.stderr)
+            return 1
     parser = _SafeArgumentParser(
         prog="citation-canary",
         allow_abbrev=False,
