@@ -38,11 +38,13 @@ Citation identifiers and evidence still are **not anonymized**. It contains
 no scripts, remote assets, or automatic network
 requests. Clicking a validated HTTPS evidence link is a separate user action.
 
-`compare` writes JSON to standard output. The same-document key includes the
-item number, locator, title, and provision. Reordered or duplicate references
+`compare` writes JSON to standard output. For the same document hash, an exact
+item number, locator, title, and provision match is compared even if another
+item has identical citation fields. Moved or otherwise unmatched references
 remain unresolved. Different source hashes are unavailable unless you supply
 `--related-versions` based on your knowledge of the documents; even then a
-unique unchanged-locator title/provision pairing is only a candidate. The
+unique unchanged-locator title/provision pairing is only a candidate; duplicate
+references cannot be paired by position across changed document hashes. The
 comparison does not read or transfer dispositions. Catalog changes, review
 date changes, evidence and status changes are separate records. Collection
 errors make the comparison unavailable for resolution claims. A zero-item

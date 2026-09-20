@@ -78,10 +78,29 @@ class CompareTests(unittest.TestCase):
         self.assertEqual(result['unresolved'], [])
         self.assertFalse(result['decision_transfer'])
 
+    def test_same_locator_and_reference_keep_item_numbers_independent(self):
+        before = report_fixture()
+        before['items'][1] = copy.deepcopy(before['items'][0])
+        after = copy.deepcopy(before)
+        after['items'][1]['status'] = 'CURRENT'
+        after['items'][1]['reason_code'] = 'SYNTHETIC_CURRENT'
+        after['items'][1]['evidence'] = [{
+            'record_id': 'fictional', 'official_source': 'https://example.invalid/source',
+            'retrieved_at': '2026-09-20T00:00:00Z', 'as_of': '2024-12-31',
+            'matched_effective_from': '2024-01-01', 'matched_effective_to': None,
+            'matched_title': '합성법 A', 'matched_provision': '제1조', 'version_transition': None,
+        }]
+        after['catalog_sha256'] = 'c' * 64
+        result = compare_reports(before, after)
+        self.assertEqual([row['type'] for row in result['changes']], ['status', 'evidence', 'catalog'])
+        self.assertEqual([(row['before_item_number'], row['after_item_number'])
+                          for row in result['changes'][:2]], [(2, 2), (2, 2)])
+        self.assertEqual(result['unresolved'], [])
+        self.assertFalse(result['decision_transfer'])
+
     def test_related_version_duplicate_reference_does_not_pair_candidates(self):
         before = report_fixture()
-        before['items'][1]['reference'] = copy.deepcopy(before['items'][0]['reference'])
-        before['items'][1]['locator'] = 'section0.xml:p2'
+        before['items'][1] = copy.deepcopy(before['items'][0])
         after = copy.deepcopy(before)
         after['document_sha256'] = 'f' * 64
         result = compare_reports(before, after, related_versions=True)

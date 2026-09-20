@@ -62,7 +62,7 @@ def compare_reports(before: dict[str, object], after: dict[str, object], *,
     if same_document:
         for number, (old, new) in enumerate(zip(old_items, new_items), 1):
             key = _identity(old)
-            if key != _identity(new) or old_counts[key] != 1 or new_counts[key] != 1:
+            if key != _identity(new):
                 continue
             matched_old.add(number)
             matched_new.add(number)
