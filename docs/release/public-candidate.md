@@ -2,11 +2,15 @@
 
 This procedure builds experimental OSS from a checkout of
 https://github.com/nowwcastle-sudo/citation-canary on main.
-For release-equivalent source, check out tag v0.2.0-experimental.1.
+For release-equivalent source, check out the matching tag. The new release
+target is v0.2.0-experimental.2; do not claim that tag exists until publication.
 A local build is not a published release; keep its output and source identity.
 
-The current archive contains exactly eleven entries: eight runtime Python
-files, the package directory, the generated root entrypoint and `LICENSE`.
+The historical v0.2.0-experimental.1 archive contains eleven entries: eight
+runtime Python files, the package directory, the generated root entrypoint and
+`LICENSE`. The v0.2.0-experimental.2 candidate contains fifteen entries: twelve
+runtime Python files, the package directory, the generated root entrypoint
+and `LICENSE`. The commands below build whichever checkout you selected.
 It includes no source HWPX, catalog, report, documentation or test fixture.
 Python 3.11 or newer must already be installed; no package installation is
 needed. Use synthetic inputs only for this procedure.
@@ -31,11 +35,11 @@ $citationTracked = @(git --no-optional-locks status --porcelain=v1 --untracked-f
 if ($LASTEXITCODE -ne 0) { throw 'Cannot record tracked checkout state.' }
 $citationBuild = Join-Path (Get-Location).Path ('dist\public-candidate-' + [guid]::NewGuid().ToString('N'))
 New-Item -ItemType Directory -Path $citationBuild | Out-Null
-$citationArtifact = Join-Path $citationBuild 'citation-canary-0.2.0.pyz'
+$citationArtifact = Join-Path $citationBuild 'citation-canary-local-candidate.pyz'
 & $citationPython .\tools\build_zipapp.py --source .\src --output $citationArtifact
 if ($LASTEXITCODE -ne 0) { throw 'Build failed; preserve this directory for inspection.' }
 $citationHash = (Get-FileHash -LiteralPath $citationArtifact -Algorithm SHA256).Hash.ToLowerInvariant()
-[IO.File]::WriteAllText(($citationArtifact + '.sha256'), ($citationHash + '  citation-canary-0.2.0.pyz' + "`n"), [Text.Encoding]::ASCII)
+[IO.File]::WriteAllText(($citationArtifact + '.sha256'), ($citationHash + '  citation-canary-local-candidate.pyz' + "`n"), [Text.Encoding]::ASCII)
 [IO.File]::WriteAllLines((Join-Path $citationBuild 'source.txt'), @("source_commit=$citationSource", "tracked_changes=$($citationTracked.Count -gt 0)"), [Text.Encoding]::ASCII)
 Get-Content -LiteralPath ($citationArtifact + '.sha256')
 Get-Content -LiteralPath (Join-Path $citationBuild 'source.txt')
@@ -75,8 +79,8 @@ ordered `CURRENT`, `HISTORY`, `REVIEW`, `UNKNOWN`, with reasons
 `AMBIGUOUS_CITATION`. These are fictional examples, not legal conclusions.
 
 Use the checkout's [catalog schema guide](../catalog-schema-v1.md). The
-packaged help links the experimental release's catalog guide; local edits
-may differ from that tag. An XML locator is not a page
+current-source package help links the v0.2.0-experimental.2 catalog guide;
+local edits may differ from that tag. An XML locator is not a page
 number, and zero candidates does not prove exhaustive citation coverage.
 
 ## Before any public release

@@ -31,11 +31,11 @@ Citation Canary는 내 컴퓨터의 HWPX 문서에서 법령·행정규칙 인�
 
 ## 실험판 내려받기
 
-[v0.2.0-experimental.1 릴리스](https://github.com/nowwcastle-sudo/citation-canary/releases/tag/v0.2.0-experimental.1)에서
+[v0.2.0-experimental.2 릴리스](https://github.com/nowwcastle-sudo/citation-canary/releases/tag/v0.2.0-experimental.2)에서
 다음 두 파일을 모두 내려받으세요. 공개 다운로드에는 GitHub 계정이나 토큰이 필요 없습니다.
 
-- [citation-canary-0.2.0.pyz](https://github.com/nowwcastle-sudo/citation-canary/releases/download/v0.2.0-experimental.1/citation-canary-0.2.0.pyz)
-- [citation-canary-0.2.0.pyz.sha256](https://github.com/nowwcastle-sudo/citation-canary/releases/download/v0.2.0-experimental.1/citation-canary-0.2.0.pyz.sha256)
+- [citation-canary-0.2.0-experimental.2.pyz](https://github.com/nowwcastle-sudo/citation-canary/releases/download/v0.2.0-experimental.2/citation-canary-0.2.0-experimental.2.pyz)
+- [citation-canary-0.2.0-experimental.2.pyz.sha256](https://github.com/nowwcastle-sudo/citation-canary/releases/download/v0.2.0-experimental.2/citation-canary-0.2.0-experimental.2.pyz.sha256)
 
 새 폴더에 두 파일을 저장하세요. 하나라도 다운로드에 실패하면 멈추고, 실패한
 파일은 보존한 채 다른 새 폴더에서 다시 받으세요. 다른 릴리스의 체크섬으로
@@ -43,12 +43,35 @@ Citation Canary는 내 컴퓨터의 HWPX 문서에서 법령·행정규칙 인�
 신원을 인증하지 않습니다. 다운로드 후 프로그램 자체는 오프라인으로 실행됩니다.
 
 소스에서 빌드하려면 [소스 빌드 안내](docs/release/public-candidate.md)를 보세요.
-배포 아카이브에는 Apache 라이선스를 포함해 정확히 11개 항목이 들어갑니다.
+`v0.2.0-experimental.2` 아카이브에는 Apache 라이선스를 포함해 정확히
+15개 항목이 들어갑니다. 이전 [v0.2.0-experimental.1
+릴리스](https://github.com/nowwcastle-sudo/citation-canary/releases/tag/v0.2.0-experimental.1)와
+그 11개 항목 아카이브도 그대로입니다. 내려받은 릴리스의 구성은 해당 태그의
+문서에서 확인하세요. `README.ko.md`는 저장소 번역 문서이며 zipapp 항목이
+아닙니다.
 
-`v0.2.0-experimental.1` 태그와 배포 파일은 고정되어 있습니다. 저장소 `main`의
-문서는 해당 릴리스 태그의 README보다 최신일 수 있습니다. `README.ko.md`는 저장소에서
-제공하는 번역이며 zipapp에 추가된 항목이 아닙니다. 내려받은 릴리스의 정확한
-구성을 확인할 때는 해당 태그의 문서를 보세요.
+## 가상 보고서 검토
+
+`v0.2.0-experimental.2`에서는 검토자의 처분을 별도 파일에 기록하고, 보고서 간
+차이를 비교하며, HTML을 오프라인으로 열람할 수 있습니다. 아래 첫 실행 절차로
+`citation-report.json`을 만든 뒤
+다운로드 폴더의 PowerShell에서 다음 명령을 실행하세요. 처분 기록과 HTML에는
+아직 쓰지 않은 파일명을 선택하세요.
+
+```powershell
+python .\citation-canary-0.2.0-experimental.2.pyz review --report .\citation-report.json --ledger .\citation-review-ledger.json --action decide --item 1 --disposition investigate
+python .\citation-canary-0.2.0-experimental.2.pyz render --report .\citation-report.json --ledger .\citation-review-ledger.json --output .\citation-review.html
+python .\citation-canary-0.2.0-experimental.2.pyz compare --before .\citation-report.json --after .\citation-report.json
+```
+
+마지막 명령은 같은 보고서를 서로 비교해 기능만 확인합니다. 변경된 문서를
+검토했다는 증거가 아닙니다. 해시가 다른 보고서는 관계를 사용자가 확인한
+경우에만 `--related-versions`를 붙이세요. 두 보고서의 항목 대응은 후보로만
+제시하며 처분 기록은 자동으로 옮기지 않습니다. 보고서·처분 기록·HTML에는
+민감한 인용 식별자가 있을 수 있으니 로컬에 보관하고 공개 이슈에 첨부하지
+마세요. 자세한 절차와 실패 시
+조치는 [로컬 검토 안내](docs/local-review.md), 실행 증거는
+[로컬 검증 표](docs/local-completion-verification.md)를 보세요.
 
 ## 실행 조건과 주의 범위
 
@@ -66,18 +89,18 @@ PowerShell을 여세요. `python` 명령을 찾을 수 없다면
 다시 열어 버전을 확인하세요. 스캐너 실행에 한컴오피스나 API 키는 필요 없습니다.
 아래 명령은 Windows PowerShell 경로를 사용합니다.
 
-[v0.2.0-experimental.1 사전 릴리스](https://github.com/nowwcastle-sudo/citation-canary/releases/tag/v0.2.0-experimental.1)의
-`citation-canary-0.2.0.pyz`와 `citation-canary-0.2.0.pyz.sha256`을 같은 폴더에 두고,
+[v0.2.0-experimental.2 사전 릴리스](https://github.com/nowwcastle-sudo/citation-canary/releases/tag/v0.2.0-experimental.2)의
+`citation-canary-0.2.0-experimental.2.pyz`와 `citation-canary-0.2.0-experimental.2.pyz.sha256`을 같은 폴더에 두고,
 그 폴더의 PowerShell에서 다음 명령을 한 줄씩 순서대로 실행하세요.
 
 ```powershell
-$checksumText=Get-Content -Raw -LiteralPath '.\citation-canary-0.2.0.pyz.sha256'
+$checksumText=Get-Content -Raw -LiteralPath '.\citation-canary-0.2.0-experimental.2.pyz.sha256'
 if ([string]::IsNullOrWhiteSpace($checksumText)) { throw 'Checksum file is empty.' }
 $expected=$checksumText.Split("`n")[0].Split('  ')[0]
-$actual=(Get-FileHash -LiteralPath '.\citation-canary-0.2.0.pyz' -Algorithm SHA256).Hash.ToLowerInvariant()
+$actual=(Get-FileHash -LiteralPath '.\citation-canary-0.2.0-experimental.2.pyz' -Algorithm SHA256).Hash.ToLowerInvariant()
 if ($actual -cne $expected) { throw 'Checksum mismatch. Do not run this artifact.' }
 python --version
-python .\citation-canary-0.2.0.pyz --help
+python .\citation-canary-0.2.0-experimental.2.pyz --help
 ```
 
 체크섬이 다르면 이후 명령을 실행하지 마세요. `python --version`은 3.11 이상이어야
@@ -89,7 +112,7 @@ python .\citation-canary-0.2.0.pyz --help
 합니다. 이 명령은 가상의 학습용 입력을 만들며 스캔은 수행하지 않습니다.
 
 ```powershell
-python .\citation-canary-0.2.0.pyz --demo .\citation-demo
+python .\citation-canary-0.2.0-experimental.2.pyz --demo .\citation-demo
 $LASTEXITCODE
 ```
 
@@ -98,9 +121,9 @@ $LASTEXITCODE
 모든 출처 URL은 `example.invalid`이며 제목·시행일·조회 정보도 가상입니다.
 HWPX는 스캐너용 최소 예제로, 편집용 한컴 서식이나 실제 기관 문서가 아닙니다.
 
-데모 생성 시 작은 JSON 안내가 표준 출력(stdout, 터미널 출력)에 나타납니다.
-이것은 스캔 보고서가 아니며 스캔 보고서는 `--output`을 생략했을 때만 표준
-출력으로 나옵니다. 지원을 위해 파일을 남길 때는 아래처럼 UTF-8 `--output`을 쓰세요.
+데모를 만들면 작은 JSON 안내가 표준 출력(stdout, 터미널 출력)에 나옵니다.
+스캔 보고서는 `--output`을 생략한 스캔에서만 표준 출력으로 나옵니다.
+지원을 위해 파일을 남길 때는 아래처럼 UTF-8 `--output`을 쓰세요.
 
 기존 폴더는 비어 있어도 거부합니다. 이전 파일이나 일부만 생성된 파일은 보존하고
 다른 새 폴더를 선택하세요. 상위 폴더가 없거나 경로에 `..`가 있거나 확인된
@@ -109,7 +132,7 @@ HWPX는 스캐너용 최소 예제로, 편집용 한컴 서식이나 실제 기�
 생성된 두 입력을 가상의 고정 기준일 `2024-12-31`로 스캔하세요.
 
 ```powershell
-python .\citation-canary-0.2.0.pyz --document .\citation-demo\synthetic-review.hwpx --as-of 2024-12-31 --catalog .\citation-demo\catalog.json
+python .\citation-canary-0.2.0-experimental.2.pyz --document .\citation-demo\synthetic-review.hwpx --as-of 2024-12-31 --catalog .\citation-demo\catalog.json
 $LASTEXITCODE
 ```
 
@@ -121,7 +144,7 @@ $LASTEXITCODE
 같은 보고서를 별도 UTF-8 파일에 저장하려면 다음과 같이 실행하세요.
 
 ```powershell
-python .\citation-canary-0.2.0.pyz --document .\citation-demo\synthetic-review.hwpx --as-of 2024-12-31 --catalog .\citation-demo\catalog.json --output .\citation-report.json
+python .\citation-canary-0.2.0-experimental.2.pyz --document .\citation-demo\synthetic-review.hwpx --as-of 2024-12-31 --catalog .\citation-demo\catalog.json --output .\citation-report.json
 $LASTEXITCODE
 Get-Content -Raw -Encoding UTF8 -LiteralPath '.\citation-report.json'
 ```
@@ -177,7 +200,7 @@ Get-Content -Raw -Encoding UTF8 -LiteralPath '.\citation-report.json'
 
 ```powershell
 $reviewDate=Read-Host 'Review date (YYYY-MM-DD)'
-python .\citation-canary-0.2.0.pyz --document .\review-input.hwpx --as-of $reviewDate --catalog .\review-catalog.json --output .\review-report.json
+python .\citation-canary-0.2.0-experimental.2.pyz --document .\review-input.hwpx --as-of $reviewDate --catalog .\review-catalog.json --output .\review-report.json
 $LASTEXITCODE
 Get-Content -Raw -Encoding UTF8 -LiteralPath '.\review-report.json'
 ```

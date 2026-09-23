@@ -31,11 +31,11 @@ again before returning a report; a changed source yields
 
 ## Download the experimental release
 
-Download both files from the [v0.2.0-experimental.1 release](https://github.com/nowwcastle-sudo/citation-canary/releases/tag/v0.2.0-experimental.1).
+Download both files from the [v0.2.0-experimental.2 release](https://github.com/nowwcastle-sudo/citation-canary/releases/tag/v0.2.0-experimental.2).
 No GitHub account or token is needed for public downloads.
 
-- [citation-canary-0.2.0.pyz](https://github.com/nowwcastle-sudo/citation-canary/releases/download/v0.2.0-experimental.1/citation-canary-0.2.0.pyz)
-- [citation-canary-0.2.0.pyz.sha256](https://github.com/nowwcastle-sudo/citation-canary/releases/download/v0.2.0-experimental.1/citation-canary-0.2.0.pyz.sha256)
+- [citation-canary-0.2.0-experimental.2.pyz](https://github.com/nowwcastle-sudo/citation-canary/releases/download/v0.2.0-experimental.2/citation-canary-0.2.0-experimental.2.pyz)
+- [citation-canary-0.2.0-experimental.2.pyz.sha256](https://github.com/nowwcastle-sudo/citation-canary/releases/download/v0.2.0-experimental.2/citation-canary-0.2.0-experimental.2.pyz.sha256)
 
 Save both in a new folder. Stop if either download fails; preserve the failed
 files and use a fresh folder when retrying. Never substitute a checksum from
@@ -43,13 +43,33 @@ another release. SHA-256 detects mismatched bytes, not publisher authenticity.
 The program itself runs offline after download.
 
 To build from source, follow the [source build guide](docs/release/public-candidate.md).
-The exact archive has eleven entries, including the Apache license.
+The `v0.2.0-experimental.2` archive has exactly 15 entries, including the
+Apache license. The earlier [v0.2.0-experimental.1
+release](https://github.com/nowwcastle-sudo/citation-canary/releases/tag/v0.2.0-experimental.1)
+and its 11-entry archive remain unchanged. Use documentation at the matching
+tag to check a downloaded release's contents. `README.ko.md` is a repository
+translation, not an extra zipapp entry.
 
-The tag and assets for `v0.2.0-experimental.1` remain fixed. Repository `main`
-documentation may be newer than the README at that fixed release tag;
-`README.ko.md` is a repository-only translation and is not an extra zipapp entry.
-Use the tagged documentation when checking exactly what a downloaded release
-contains.
+## Review the synthetic report
+
+The `v0.2.0-experimental.2` package includes a separate human-decision ledger,
+conservative report comparison, and an offline HTML view. After the first-run
+demo and scan below have created `citation-report.json`, run these commands
+from the download folder in PowerShell. Choose unused ledger and HTML names:
+
+```powershell
+python .\citation-canary-0.2.0-experimental.2.pyz review --report .\citation-report.json --ledger .\citation-review-ledger.json --action decide --item 1 --disposition investigate
+python .\citation-canary-0.2.0-experimental.2.pyz render --report .\citation-report.json --ledger .\citation-review-ledger.json --output .\citation-review.html
+python .\citation-canary-0.2.0-experimental.2.pyz compare --before .\citation-report.json --after .\citation-report.json
+```
+
+The same-report comparison is a command check, not proof of a reviewed
+revision. To compare changed document hashes, provide two reports and
+`--related-versions` only when you know their relationship; matches remain
+candidates and decisions do not transfer. The report, ledger and HTML can
+carry sensitive citation identifiers. Keep them local and do not attach them
+to issues. See [local review and recovery](docs/local-review.md) and the
+[local verification ledger](docs/local-completion-verification.md).
 
 ## Boundaries
 
@@ -74,22 +94,22 @@ the version before continuing. Hancom Office and an API key are not required
 to run the scanner. The examples below use Windows PowerShell paths.
 
 Download both assets from the public
-[v0.2.0-experimental.1 prerelease](https://github.com/nowwcastle-sudo/citation-canary/releases/tag/v0.2.0-experimental.1)
+[v0.2.0-experimental.2 prerelease](https://github.com/nowwcastle-sudo/citation-canary/releases/tag/v0.2.0-experimental.2)
 to the same folder, then open PowerShell in that folder:
 
-- `citation-canary-0.2.0.pyz`
-- `citation-canary-0.2.0.pyz.sha256`
+- `citation-canary-0.2.0-experimental.2.pyz`
+- `citation-canary-0.2.0-experimental.2.pyz.sha256`
 
 Verify the downloaded artifact before running it in PowerShell:
 
 ```powershell
-$checksumText=Get-Content -Raw -LiteralPath '.\citation-canary-0.2.0.pyz.sha256'
+$checksumText=Get-Content -Raw -LiteralPath '.\citation-canary-0.2.0-experimental.2.pyz.sha256'
 if ([string]::IsNullOrWhiteSpace($checksumText)) { throw 'Checksum file is empty.' }
 $expected=$checksumText.Split("`n")[0].Split('  ')[0]
-$actual=(Get-FileHash -LiteralPath '.\citation-canary-0.2.0.pyz' -Algorithm SHA256).Hash.ToLowerInvariant()
+$actual=(Get-FileHash -LiteralPath '.\citation-canary-0.2.0-experimental.2.pyz' -Algorithm SHA256).Hash.ToLowerInvariant()
 if ($actual -cne $expected) { throw 'Checksum mismatch. Do not run this artifact.' }
 python --version
-python .\citation-canary-0.2.0.pyz --help
+python .\citation-canary-0.2.0-experimental.2.pyz --help
 ```
 
 `python --version` must report 3.11 or newer. Run every line in order; stop on a
@@ -103,7 +123,7 @@ yet. This command explicitly creates fictional learning inputs; it does not
 perform a scan.
 
 ```powershell
-python .\citation-canary-0.2.0.pyz --demo .\citation-demo
+python .\citation-canary-0.2.0-experimental.2.pyz --demo .\citation-demo
 $LASTEXITCODE
 ```
 
@@ -125,7 +145,7 @@ directories, `..` components, and observed symlink/reparse paths are rejected.
 Now scan the generated pair with the fixed fictional date `2024-12-31`:
 
 ```powershell
-python .\citation-canary-0.2.0.pyz --document .\citation-demo\synthetic-review.hwpx --as-of 2024-12-31 --catalog .\citation-demo\catalog.json
+python .\citation-canary-0.2.0-experimental.2.pyz --document .\citation-demo\synthetic-review.hwpx --as-of 2024-12-31 --catalog .\citation-demo\catalog.json
 $LASTEXITCODE
 ```
 
@@ -137,7 +157,7 @@ Expected: exit 0, `collection_errors: []`, and exactly four items in order:
 Write the same report to a separate UTF-8 file:
 
 ```powershell
-python .\citation-canary-0.2.0.pyz --document .\citation-demo\synthetic-review.hwpx --as-of 2024-12-31 --catalog .\citation-demo\catalog.json --output .\citation-report.json
+python .\citation-canary-0.2.0-experimental.2.pyz --document .\citation-demo\synthetic-review.hwpx --as-of 2024-12-31 --catalog .\citation-demo\catalog.json --output .\citation-report.json
 $LASTEXITCODE
 Get-Content -Raw -Encoding UTF8 -LiteralPath '.\citation-report.json'
 ```
@@ -194,7 +214,7 @@ date explicitly. Choose an unused report name before repeating it.
 
 ```powershell
 $reviewDate=Read-Host 'Review date (YYYY-MM-DD)'
-python .\citation-canary-0.2.0.pyz --document .\review-input.hwpx --as-of $reviewDate --catalog .\review-catalog.json --output .\review-report.json
+python .\citation-canary-0.2.0-experimental.2.pyz --document .\review-input.hwpx --as-of $reviewDate --catalog .\review-catalog.json --output .\review-report.json
 $LASTEXITCODE
 Get-Content -Raw -Encoding UTF8 -LiteralPath '.\review-report.json'
 ```

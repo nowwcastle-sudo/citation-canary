@@ -8,6 +8,7 @@ ROOT = Path(__file__).resolve().parents[1]
 class DocumentationContractTests(unittest.TestCase):
     def test_experimental_release_first_use_contract_is_present(self) -> None:
         readme = (ROOT / "README.md").read_text(encoding="utf-8")
+        korean = (ROOT / "README.ko.md").read_text(encoding="utf-8")
         runbook = (ROOT / "docs" / "release" / "public-candidate.md").read_text(
             encoding="utf-8"
         )
@@ -17,8 +18,12 @@ class DocumentationContractTests(unittest.TestCase):
         combined = "\n".join((readme, runbook, acceptance))
 
         self.assertIn("No GitHub account or token", readme)
+        self.assertIn("releases/tag/v0.2.0-experimental.2", readme)
+        self.assertIn("releases/download/v0.2.0-experimental.2", readme)
+        self.assertIn("citation-canary-0.2.0-experimental.2.pyz", readme)
+        self.assertIn("releases/download/v0.2.0-experimental.2", korean)
+        self.assertIn("citation-canary-0.2.0-experimental.2.pyz.sha256", korean)
         self.assertIn("releases/tag/v0.2.0-experimental.1", readme)
-        self.assertIn("releases/download/v0.2.0-experimental.1", readme)
         self.assertIn("Never substitute a checksum", readme)
         self.assertRegex(runbook, r"keep its output")
         self.assertIn("CURRENT", readme)

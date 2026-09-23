@@ -4,7 +4,9 @@
 
 Local HWPX reading, schema-v1 catalog handling, separate evidence reports, synthetic demo generation, and deterministic PYZ packaging.
 
-The current experimental release is v0.2.0-experimental.1. Security fixes target
+This source tree targets v0.2.0-experimental.2. Check
+https://github.com/nowwcastle-sudo/citation-canary/releases for published
+versions; a source candidate is not a published release. Security fixes target
 current development; older releases have no backport promise. Supported runtime:
 Python 3.11 or newer on the Windows versions covered by the current candidate CI.
 Reports and statuses describe available evidence; they are not a security or
