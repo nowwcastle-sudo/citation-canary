@@ -26,7 +26,7 @@ class PackagedDemoTests(unittest.TestCase):
     def setUpClass(cls) -> None:
         # Retain artifacts and failed inputs for independent review.
         cls.work_dir = Path(tempfile.mkdtemp(prefix="citation-demo-regression-"))
-        cls.archive_path = cls.work_dir / "citation-canary-0.2.0.pyz"
+        cls.archive_path = cls.work_dir / "citation-canary-0.2.0-experimental.2.pyz"
         build_zipapp(REPOSITORY_ROOT / "src", cls.archive_path)
         cls.environment = os.environ.copy()
         cls.environment.pop("PYTHONPATH", None)
@@ -233,7 +233,11 @@ class PackagedDemoTests(unittest.TestCase):
         completed = self._run("--help")
         self.assertEqual(completed.returncode, 0)
         text = completed.stdout.decode("utf-8")
-        for marker in ("--demo", "2024-12-31", "catalog-schema-v1.md", "generate", "scan"):
+        for marker in (
+            "--demo", "2024-12-31",
+            "v0.2.0-experimental.2/docs/catalog-schema-v1.md",
+            "generate", "scan",
+        ):
             self.assertIn(marker, text)
         self.assertEqual(completed.stderr, b"")
 
@@ -275,7 +279,7 @@ class PackagedDemoTests(unittest.TestCase):
         readme = (demo_dir / "README.txt").read_text("utf-8")
         self.assertTrue(readme.startswith("SYNTHETIC_DEMO_ONLY\n"))
         for required in (
-            "citation-canary-0.2.0.pyz", "--as-of 2024-12-31",
+            "citation-canary-0.2.0-experimental.2.pyz", "--as-of 2024-12-31",
             "--output", "example.invalid", "CURRENT, HISTORY, REVIEW, UNKNOWN",
         ):
             self.assertIn(required, readme)

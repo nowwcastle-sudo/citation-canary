@@ -65,11 +65,11 @@ All titles, dates and example.invalid URLs are synthetic. No URL is fetched.
 The minimal HWPX demonstrates the scanner; it is not an editable Hancom form.
 
 Run these separate commands in PowerShell from the folder containing your
-verified citation-canary-0.2.0.pyz. They assume the documented --demo directory
+verified citation-canary-0.2.0-experimental.2.pyz. They assume the documented --demo directory
 is .\\citation-demo; substitute your chosen demo directory if different.
 
-python .\\citation-canary-0.2.0.pyz --document .\\citation-demo\\synthetic-review.hwpx --as-of 2024-12-31 --catalog .\\citation-demo\\catalog.json
-python .\\citation-canary-0.2.0.pyz --document .\\citation-demo\\synthetic-review.hwpx --as-of 2024-12-31 --catalog .\\citation-demo\\catalog.json --output .\\citation-report.json
+python .\\citation-canary-0.2.0-experimental.2.pyz --document .\\citation-demo\\synthetic-review.hwpx --as-of 2024-12-31 --catalog .\\citation-demo\\catalog.json
+python .\\citation-canary-0.2.0-experimental.2.pyz --document .\\citation-demo\\synthetic-review.hwpx --as-of 2024-12-31 --catalog .\\citation-demo\\catalog.json --output .\\citation-report.json
 
 Expected ordered statuses: CURRENT, HISTORY, REVIEW, UNKNOWN.
 These route human review; none is a legal decision or an instruction to edit.

@@ -1,12 +1,17 @@
-# Local citation review (source-built candidate)
+# Local citation review
 
-This procedure applies to a candidate built from the current source tree. The
-fixed `v0.2.0-experimental.1` release has only scan/demo commands and an
-11-member archive. It does not contain `review`, `render`, or `compare`.
+This procedure applies to the v0.2.0-experimental.2 package or a candidate built
+from its source. The fixed v0.2.0-experimental.1 release has only scan/demo
+commands and an 11-member archive; it does not contain `review`, `render`, or
+`compare`. The new package has exactly 15 entries.
 
-From the repository root in PowerShell, with Python 3.11 or newer, use unused
-output paths. Run one line at a time and check `$LASTEXITCODE` after each
-program call. The synthetic catalog uses fictional `example.invalid` sources.
+The commands below build a source candidate from the repository root. For the
+published release, use the verified
+`citation-canary-0.2.0-experimental.2.pyz` in place of
+`local-review-candidate.pyz` and skip the build line. Use unused output paths,
+run one line at a time with Python 3.11 or newer, and check `$LASTEXITCODE`
+after each program call. The synthetic catalog uses fictional
+`example.invalid` sources.
 
 ```powershell
 python .\tools\build_zipapp.py --source .\src --output .\local-review-candidate.pyz

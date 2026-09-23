@@ -170,7 +170,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             "synthetic-review.hwpx and catalog.json with --as-of 2024-12-31. "
             "The demo is fictional and does not establish legal facts. "
             "Catalog guide: https://github.com/nowwcastle-sudo/citation-canary/"
-            "blob/v0.2.0-experimental.1/docs/catalog-schema-v1.md"
+            "blob/v0.2.0-experimental.2/docs/catalog-schema-v1.md"
         ),
     )
     parser.add_argument("--demo", metavar="NEW_DIRECTORY", help="generate synthetic inputs in a new directory; separate from scan")
