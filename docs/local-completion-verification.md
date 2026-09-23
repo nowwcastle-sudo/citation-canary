@@ -63,6 +63,10 @@ independent scoped re-review: all five final findings addressed, with no new
 Critical/Important breakage. The full local suite was 151 tests, exit 0
 (including 20 zipapp tests, not 171 tests). Parent readback confirmed both
 15-member candidates have the final `aa0dbe04...` SHA-256 stated above.
+The same 151-test suite was run directly again at current source head
+`08306c4b8e20fbaf9a2720261758c035f6acca8c` on 2026-09-24:
+151 passed, exit 0. The retained local raw output is 23,120 bytes with
+SHA-256 `ecdeb43faef96be5c08c51aeba43db4e36eb4df6025b189bfcd0da746a0ad848`.
 
 The pending browser check is now complete for synthetic Chrome usage:
 at 375px, document width is 375px rather than the earlier 528px. The full
@@ -74,7 +78,9 @@ in eight checks, exit 0. This does not generalize to every filesystem race.
 
 Dedicated static security diff scan
 `c8f9669e-cc67-47ac-8edb-93d6d7aaa05e` reviewed all six changed source files
-at this runtime source and was sealed with no reportable findings. It is
+at this runtime source and was sealed with no reportable findings. Canonical
+coverage is **partial** because six-file discovery accounting remains
+deferred. It is
 not a whole-repository or all-environment safety certificate. Report and
 ledger authenticity remain unverified assertions, and operator-selected
 network-backed paths are not an OS-wide offline isolation guarantee.
