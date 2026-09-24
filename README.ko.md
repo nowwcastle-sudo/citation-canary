@@ -2,7 +2,7 @@
 
 [English](https://github.com/nowwcastle-sudo/citation-canary/blob/main/README.md) · [한국어](https://github.com/nowwcastle-sudo/citation-canary/blob/main/README.ko.md)
 
-Citation Canary는 내 컴퓨터의 HWPX 문서에서 법령·행정규칙 인용 후보를 찾아,
+Citation Canary는 내 컴퓨터의 HWPX 문서에서 법령·행정규칙 인용 후보를 찾아
 사용자가 준비한 날짜별 출처 목록(카탈로그)과 대조합니다. 원본을 고치거나
 네트워크에 접속하지 않고, 사람이 검토할 JSON 보고서를 만듭니다.
 현재는 실험 단계 오픈소스이며 법적 정확성, 사건·판례의 진위, 실제 사용자의
